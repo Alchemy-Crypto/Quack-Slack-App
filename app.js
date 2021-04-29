@@ -15,52 +15,6 @@ app.action('check-balance', async({ ack, say, body }) => {
   await say(`Your current balance is ${checkBalance.text} Quacks. :duck:`);
 });
 
-app.shortcut('open_modal', async ({ ack, payload, client }) => {
-  // Acknowledge shortcut request
-  ack();
-
-  try {
-    // Call the views.open method using the WebClient passed to listeners
-    const result = await client.views.open({
-      trigger_id: payload.trigger_id,
-      view: {
-        "type": "modal",
-        "title": {
-          "type": "plain_text",
-          "text": "My App"
-        },
-        "close": {
-          "type": "plain_text",
-          "text": "Close"
-        },
-        "blocks": [
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "About the simplest modal you could conceive of :smile:\n\nMaybe <https://api.slack.com/reference/block-kit/interactive-components|*make the modal interactive*> or <https://api.slack.com/surfaces/modals/using#modifying|*learn more advanced modal use cases*>."
-            }
-          },
-          {
-            "type": "context",
-            "elements": [
-              {
-                "type": "mrkdwn",
-                "text": "Psssst this modal was designed using <https://api.slack.com/tools/block-kit-builder|*Block Kit Builder*>"
-              }
-            ]
-          }
-        ]
-      }
-    });
-
-    console.log(result);
-  }
-  catch (error) {
-    console.error(error);
-  }
-});
-
 
 app.action('send-quacks', async({ ack, say, body, client }) => {
   await ack();
@@ -110,20 +64,32 @@ app.action('send-quacks', async({ ack, say, body, client }) => {
           },
           {
             "block_id": "receiver-id",
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "Who would you like to send Quacks to?"
-            },
-            "accessory": {
-              "type": "users_select",
+            "type": "input",
+            "element": {
+              "type": "multi_users_select",
+              "max_selected_items": 1,
               "placeholder": {
                 "type": "plain_text",
-                "text": "Select a user",
+                "text": "Select users",
                 "emoji": true
               },
               "action_id": "receiver-action"
+            },
+            "label": {
+              "type": "plain_text",
+              "text": "Who would you like to send Quacks to?",
+              "emoji": true
             }
+          },
+          {
+            "type": "context",
+            "elements": [
+              {
+                "type": "plain_text",
+                "text": "Only allowed to select 1 recipient!",
+                "emoji": true
+              }
+            ]
           },
           {
             "block_id": "amount-input",
@@ -171,13 +137,6 @@ app.action('send-quacks', async({ ack, say, body, client }) => {
   catch (error) {
     console.error(error);
   }
-
-  // console.log(body.trigger_id);
-  // const sendQuacks = await request.post(`${process.env.BACKEND_URL}/quack/send-quacks`).send({
-    // senderId,
-    // receiverId,
-    // amount
-  // })
   // await say();
 });
 
@@ -188,7 +147,12 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
   const receiverId = view.state.values['receiver-id']['receiver-action'].selected_user;
   const amount = view.state.values['amount-input']['amount-action'].value;
   console.log(senderId, receiverId, amount);
-  // await say();
+  const sendQuacks = await request.post(`${process.env.BACKEND_URL}/quack/send-quacks`).send({
+    senderId,
+    receiverId,
+    amount
+  })
+  await say();
 })
 
 
