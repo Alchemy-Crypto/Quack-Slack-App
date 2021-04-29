@@ -1,5 +1,9 @@
 const { App } = require('@slack/bolt');
 require('dotenv').config();
+const request = require('superagent');
+
+
+
 
 
 
@@ -9,24 +13,17 @@ const app = new App({
 });
 
 
-app.event('app_home_opened', ({ event, say }) => {
-  console.log('triggered');
-  say(`Welcome, <@${event.user}>`);
-});
-
-
 app.action('check-balance', async({ ack, say, body }) => {
   await ack();
-
-  console.log('action event?!?!', body)
-  await say('Request approved 👍');
+  const totalSupply = await request.get(`${process.env.BACKEND_URL}/quack/total-supply`);
+  await say(totalSupply.res.text);
 })
 
 
 app.action('send-quacks', async({ ack, say, body }) => {
   await ack();
 
-  console.log('action event?!?!', body)
+  
   await say('Request approved 👍');
 })
 
@@ -34,14 +31,15 @@ app.action('send-quacks', async({ ack, say, body }) => {
 app.action('mint-quacks', async({ ack, say, body }) => {
   await ack();
 
-  console.log('action event?!?!', body)
+ 
   await say('Request approved 👍');
 })
 
 
 app.command('/quack', async({ command, ack, say }) => {
   await ack();
-
+  const totalSupply = await request.get(`${process.env.BACKEND_URL}/quack/total-supply`);
+  const total = totalSupply.res.text;
   await say(
     {
     "blocks": [
@@ -57,7 +55,7 @@ app.command('/quack', async({ command, ack, say }) => {
         "type": "section",
         "text": {
           "type": "mrkdwn",
-          "text": "Welcome to our App :ghost:"
+          "text": `Welcome to our App. Currently there are *${total}* Quacks in the pond. :duck:`
         }
       },
       {
@@ -98,26 +96,6 @@ app.command('/quack', async({ command, ack, say }) => {
     ]
   })
 });
-
-
-app.message('hello', async ({ message, say }) => {
-  await say(`hi,<@${message.user}>, how ya doin!` );
-});
-
-// app.post('/actions', (req, res) => {
-//   const payload = JSON.parse(req.body.payload);
-//   const { type, user, view } = payload; 
-//   console.log(req.body);
-  
-//   if (!signature.isVerified(req)) {
-//     res.sendStatus(404);
-//     return;
-//   }
-
-//   if(type === 'message_action') {
-//   } else if (type === 'view_submission') {
-//   }
-// });
 
 
 (async() => {
