@@ -147,13 +147,21 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
   const senderId = body.user.id;
   const receiverId = view.state.values['receiver-id']['receiver-action'].selected_users[0];
   const amount = view.state.values['amount-input']['amount-action'].value;
-  await request.post(`${process.env.BACKEND_URL}/quack/send-quacks`).send({
+  const balance = await request.get(`${process.env.BACKEND_URL}/quack/check-balance/${body.user.id}`);
+  if(balance < amount) {
+    await client.chat.postEphemeral({
+      channel: senderId,
+      user: senderId, 
+      text: `Not enough quacks for this transaction.`
+    });
+  } else {
+    await request.post(`${process.env.BACKEND_URL}/quack/send-quacks`).send({
     senderId,
     receiverId,
     amount
-  });
-  const notes = view.state.values['notes-input']['notes-action'].value;
-  await client.chat.postMessage({
+    });
+    const notes = view.state.values['notes-input']['notes-action'].value;
+    await client.chat.postMessage({
     channel: receiverId,
     text: `<@${senderId}> just sent you ${amount} Quacks! 
     This transaction is being recorded onto the blockchain and should be available in your account in about a minute! 
@@ -164,6 +172,7 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
     user: senderId, 
     text: `Transaction has been initiated`
   });
+}
 });
 
 
