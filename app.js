@@ -142,14 +142,12 @@ app.action('send-quacks', async({ ack, body, client }) => {
 });
 
 
-
 app.view('send-quacks', async({ ack, body, view, client }) => {
   await ack();
   const senderId = body.user.id;
   const receiverId = view.state.values['receiver-id']['receiver-action'].selected_users[0];
   const amount = view.state.values['amount-input']['amount-action'].value;
   const balance = await request.get(`${process.env.BACKEND_URL}/quack/check-balance/${body.user.id}`);
-  console.log('balance line 151', balance.text);
   if(balance.text < amount) {
     await client.chat.postEphemeral({
       channel: senderId,
@@ -180,79 +178,88 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
 
 app.action('mint-quacks', async({ ack, body, client }) => {
   await ack();
-  try {
-    const result = await client.views.open({
-      trigger_id: body.trigger_id,
-      view: {
-        "type": "modal",
-        "title": {
-          "type": "plain_text",
-          "text": "Quackchain",
-          "emoji": true
-        },
-        "submit": {
-          "type": "plain_text",
-          "text": "Mint Quacks",
-          "emoji": true
-        },
-        "close": {
-          "type": "plain_text",
-          "text": "Cancel",
-          "emoji": true
-        },
-        "callback_id": "mint-quacks",
-        "blocks": [
-          {
-            "type": "header",
-            "text": {
-              "type": "plain_text",
-              "text": "Welcome to the Quackchain! ",
-              "emoji": true
-            }
+  const balance = await request.get(`${process.env.BACKEND_URL}/quack/check-balance/${body.user.id}`);
+  if(balance > 0) { 
+    try {
+      const result = await client.views.open({
+        trigger_id: body.trigger_id,
+        view: {
+          "type": "modal",
+          "title": {
+            "type": "plain_text",
+            "text": "Quackchain",
+            "emoji": true
           },
-          {
-            "type": "divider"
+          "submit": {
+            "type": "plain_text",
+            "text": "Mint Quacks",
+            "emoji": true
           },
-          {
-            "type": "section",
-            "text": {
-              "type": "plain_text",
-              "text": "Here you can create Quacks! In order to mint Quacks you must first burn some as a processing fee.",
-              "emoji": true
-            }
+          "close": {
+            "type": "plain_text",
+            "text": "Cancel",
+            "emoji": true
           },
-          {
-            "type": "divider"
-          },
-          {
-            "block_id": "mint-input",
-            "type": "input",
-            "element": {
-              "type": "plain_text_input",
-              "action_id": "mint-action"
-            },
-            "label": {
-              "type": "plain_text",
-              "text": "How many Quacks would you like to mint?",
-              "emoji": true
-            }
-          },
-          {
-            "type": "context",
-            "elements": [
-              {
+          "callback_id": "mint-quacks",
+          "blocks": [
+            {
+              "type": "header",
+              "text": {
                 "type": "plain_text",
-                "text": "Whole Quacks, only, please!",
+                "text": "Welcome to the Quackchain! ",
                 "emoji": true
               }
-            ]
-          }
-        ]
-      }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "section",
+              "text": {
+                "type": "plain_text",
+                "text": "Here you can create Quacks! In order to mint Quacks you must first burn some as a processing fee.",
+                "emoji": true
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "block_id": "mint-input",
+              "type": "input",
+              "element": {
+                "type": "plain_text_input",
+                "action_id": "mint-action"
+              },
+              "label": {
+                "type": "plain_text",
+                "text": "How many Quacks would you like to mint?",
+                "emoji": true
+              }
+            },
+            {
+              "type": "context",
+              "elements": [
+                {
+                  "type": "plain_text",
+                  "text": "Whole Quacks, only, please!",
+                  "emoji": true
+                }
+              ]
+            }
+          ]
+        }
+      });
+    }
+    catch (error) {
+      console.error(error);
+    }
+  } else {
+    await client.chat.postEphemeral({
+      channel: body.user.id,
+      user: body.user.id, 
+      text: `Only holders can mint Quacks!`
     });
-  }
-  catch (error) {
-    console.error(error);
   }
 });
 
