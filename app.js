@@ -16,7 +16,7 @@ app.action('check-balance', async({ ack, say, body }) => {
 });
 
 
-app.action('send-quacks', async({ ack, say, body, client }) => {
+app.action('send-quacks', async({ ack, body, client }) => {
   await ack();
   try {
     const result = await client.views.open({
@@ -136,30 +136,115 @@ app.action('send-quacks', async({ ack, say, body, client }) => {
   }
   catch (error) {
     console.error(error);
-  }
-  // await say();
+  };
 });
 
 
-app.view('send-quacks', async({ ack, body, view, client }) => {
+app.view('send-quacks', async({ ack, body, view }) => {
   await ack();
   const senderId = body.user.id;
-  const receiverId = view.state.values['receiver-id']['receiver-action'].selected_user;
+  const receiverId = view.state.values['receiver-id']['receiver-action'].selected_users[0];
   const amount = view.state.values['amount-input']['amount-action'].value;
-  console.log(senderId, receiverId, amount);
+  // console.log(senderId, receiverId, amount);
   const sendQuacks = await request.post(`${process.env.BACKEND_URL}/quack/send-quacks`).send({
     senderId,
     receiverId,
     amount
-  })
-  await say();
-})
+  });
+  console.log(sendQuacks);
+});
 
 
-app.action('mint-quacks', async({ ack, say, body }) => {
+app.action('mint-quacks', async({ ack, say, body, client }) => {
   await ack();
-  const mintQuacks = await request
-  await say();
+  try {
+    const result = await client.views.open({
+      trigger_id: body.trigger_id,
+      view: {
+        "type": "modal",
+        "title": {
+          "type": "plain_text",
+          "text": "Quackchain",
+          "emoji": true
+        },
+        "submit": {
+          "type": "plain_text",
+          "text": "Mint Quacks",
+          "emoji": true
+        },
+        "close": {
+          "type": "plain_text",
+          "text": "Cancel",
+          "emoji": true
+        },
+        "callback_id": "mint-quacks",
+        "blocks": [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": "Welcome to the Quackchain! ",
+              "emoji": true
+            }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "plain_text",
+              "text": "Here you can create Quacks! In order to mint Quacks you must first burn some as a processing fee.",
+              "emoji": true
+            }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "block_id": "mint-input",
+            "type": "input",
+            "element": {
+              "type": "plain_text_input",
+              "action_id": "mint-action"
+            },
+            "label": {
+              "type": "plain_text",
+              "text": "How many Quacks would you like to mint?",
+              "emoji": true
+            }
+          },
+          {
+            "type": "context",
+            "elements": [
+              {
+                "type": "plain_text",
+                "text": "Whole Quacks, only, please!",
+                "emoji": true
+              }
+            ]
+          }
+        ]
+      }
+    });
+
+    console.log(result);
+  }
+  catch (error) {
+    console.error(error);
+  }
+  await say(`Quacks created successfully! :duck:`);
+});
+
+
+app.view('mint-quacks', async({ ack, body, view }) => {
+  await ack();
+  const slackId = body.user.id;
+  const amount = view.state.values['mint-input']['mint-action'].value;
+  const mintQuacks = await request.post(`${process.env.BACKEND_URL}/quack/mint-quacks`).send({
+    slackId,
+    amount
+  });
 });
 
 
