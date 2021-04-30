@@ -149,7 +149,7 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
   const amount = view.state.values['amount-input']['amount-action'].value;
   const balance = await request.get(`${process.env.BACKEND_URL}/quack/check-balance/${body.user.id}`);
   console.log('balance line 151', balance.text);
-  if(balance < amount) {
+  if(balance.text < amount) {
     await client.chat.postEphemeral({
       channel: senderId,
       user: senderId, 
