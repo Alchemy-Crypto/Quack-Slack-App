@@ -179,7 +179,7 @@ app.view('send-quacks', async({ ack, body, view, client }) => {
 app.action('mint-quacks', async({ ack, body, client }) => {
   await ack();
   const balance = await request.get(`${process.env.BACKEND_URL}/quack/check-balance/${body.user.id}`);
-  if(balance > 0) { 
+  if(balance.text > 0) { 
     try {
       const result = await client.views.open({
         trigger_id: body.trigger_id,
